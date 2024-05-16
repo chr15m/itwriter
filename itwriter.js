@@ -11,9 +11,10 @@ const struct = {
   "bpm": 180,
   "samples": [
     {
-      "name": "000000156.wav",
+      "name": "piano",
+      "filename": "000000156.wav",
       "samplerate": 44100,
-      "data": [[...(new Array(4410))].map((v, i) => Math.sin(i/441))]
+      "channels": [[...(new Array(4410))].map((v, i) => Math.sin(i/441))]
     }
   ],
   "sequence": [0],
@@ -22,14 +23,14 @@ const struct = {
       "length": 64,
       "channels": [
         {
-          "name": "snares",
+          "name": "piano",
           0: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
           4: { "note": "C-6", "sample": 0, "vol": "v64", "fx": "SD1" }
         },
         {
-          "name": "piano",
-          2: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
-          4: { "note": "G-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+          "name": "drums",
+          2: { "note": "E-6", "sample": 1, "vol": "v64", "fx": "SD1" },
+          4: { "note": "G-6", "sample": 1, "vol": "v64", "fx": "SD1" }
         }
       ]
     }
@@ -74,7 +75,7 @@ function itwriter(struct) {
   writeString(data, offset, "IMPM");
   offset += 4;
 
-  // Skip song name
+  // Song title
   writeString(data, offset, (struct.title || "").slice(0, 26));
   offset += 26;
 
@@ -196,6 +197,7 @@ function itwriter(struct) {
     offset += 4;
 
     // DOS filename
+    writeString(data, offset, (struct.samples[0].filename || struct.samples[0].name || "").slice(0, 12));
     offset += 12;
 
     // Always null
@@ -214,6 +216,7 @@ function itwriter(struct) {
     offset++;
 
     // Skip sample name
+    writeString(data, offset, (struct.samples[0].name || struct.samples[0].filename || "").slice(0, 26));
     offset += 26;
 
     // Cvt / convert (bitmask; bit 1 on = signed samples; off = unsigned)

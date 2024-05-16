@@ -10,6 +10,8 @@ const it = itwriter({
   "title": "itwriter example",
   "samples": [
     {
+      "filename": "sine.wav",
+      "name": "sinewave",
       "samplerate": 44100,
       "channels": [sine, sine]
     }

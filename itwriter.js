@@ -75,6 +75,7 @@ function itwriter(struct) {
   offset += 4;
 
   // Skip song name
+  writeString(data, offset, (struct.title || "").slice(0, 26));
   offset += 26;
 
   // PHiligt - pattern row hilight information

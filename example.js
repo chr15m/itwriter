@@ -17,6 +17,9 @@ wavdata = [sine, sine].map((channel) => {
   return int16Array.buffer;
 });
 
-const it = itwriter({"samples": wavdata});
+const it = itwriter({
+  "title": "itwriter example",
+  "samples": wavdata
+});
 console.log(it);
 fs.writeFileSync("example.it", Buffer.from(it));

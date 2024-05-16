@@ -1,0 +1,9 @@
+{
+  "name": "itwriter",
+  "devDependencies": {
+    "jshint":"^2.13.6"
+  },
+  "scripts": {
+    "example": "node example.js && xmp example.it"
+  }
+}

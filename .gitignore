@@ -1,0 +1,4 @@
+example.it
+.*.swp
+node_modules
+workspace

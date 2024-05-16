@@ -1,0 +1,297 @@
+/* jshint esversion: 6 */
+
+/**
+ * Converts JSON struture to an Impulse Tracker module file.
+ * @param {Array} struct - see below
+ * @returns {ArrayBuffer} containing the impulse tracker data to be downloaded or written to disk.
+ * @note The JSON structure should have the following structure...
+ */
+
+// thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation
+
+function itwriter(struct) {
+  const wavData = struct.samples;
+  const bitDepth = 16;
+  const OrdNum = 2;
+  const InsNum = 0;
+  const SmpNum = wavData.length;
+  const PatNum = 1;
+
+  // Round up duration and add a row to allow space
+  const patternRows = 16;
+
+  // Calculate output file size
+  // Initial part of header is always 0xC0 / 192 bytes
+  const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4);
+  const sampleSize  = 0x50 * SmpNum;
+  const patternSize = 8 + (SmpNum * 4) + patternRows + (wavData.reduce((size, channel) => size + channel.byteLength, 0));
+
+  // Output buffer/data view
+  const buffer = new ArrayBuffer(headerSize + sampleSize + patternSize);
+  const data   = new DataView(buffer);
+
+  let offset = 0;
+
+  // Magic number
+  writeString(data, offset, "IMPM");
+  offset += 4;
+
+  // Skip song name
+  offset += 26;
+
+  // PHiligt - pattern row hilight information
+  data.setUint16(offset, 0x0410);
+  offset += 2;
+
+  // OrdNum - number of orders in song
+  data.setUint16(offset, OrdNum, true);
+  offset += 2;
+
+  // InsNum - number of instruments in song
+  data.setUint16(offset, InsNum, true);
+  offset += 2;
+
+  // SmpNum - number of samples in song
+  data.setUint16(offset, SmpNum, true);
+  offset += 2;
+
+  // PatNum - number of patterns in song
+  data.setUint16(offset, PatNum, true);
+  offset += 2;
+
+  // Cwt/v - created with tracker
+  data.setUint16(offset, 0x2951);
+  offset += 2;
+
+  // Cmwt - compatible with tracker with version greater than value
+  data.setUint16(offset, 0x1402);
+  offset += 2;
+
+  // Flags (set to default from OpenMPT)
+  data.setUint16(offset, 0x4900);
+  offset += 2;
+
+  // Special
+  data.setUint16(offset, 0x0600);
+  offset += 2;
+
+  // GV - global volume
+  data.setUint8(offset, 0x80);
+  offset++;
+
+  // MV - mix volume
+  data.setUint8(offset, 0x30);
+  offset++;
+
+  // IS - initial speed of song
+  // From OpenMPT docs: "In OpenMPT, 'Speed' means 'ticks per row'"
+  // Set to 24 as "classic tempo" units are 24 ticks per minute
+  data.setUint8(offset, 24);
+  offset++;
+
+  // IT - initial tempo of song
+  data.setUint8(offset, 0x78); // 120 BPM
+  offset++;
+
+  // Sep - panning separation between channels
+  data.setUint8(offset, 0x80);
+  offset++;
+
+  // PWD - pitch wheel depth for MIDI controllers
+  data.setUint8(offset, 0x00);
+  offset++;
+
+  // MsgLgth / message offset / reserved
+  offset += 10;
+
+  // Channel pan - if stereo, pan L/R
+  // 0  = hard left
+  // 32 = centre
+  // 64 = hard right
+  if (wavData.length === 2) { // stereo
+    data.setUint8(offset, 0x00);
+    offset++;
+
+    data.setUint8(offset, 0x40);
+    offset++;
+  } else { // mono
+    data.setUint8(offset, 0x20);
+    offset++;
+  }
+
+  for (let i = 0; i < 64 - wavData.length /* - (extraChannels * wavData.length) */; i++) {
+    data.setUint8(offset, 0xA0);
+    offset++;
+  }
+
+  // Channel vol
+  for (let i = 0; i < 64; i++) {
+    data.setUint8(offset, 0x40);
+    offset++;
+  }
+
+  // Orders - order in which the patterns are played
+  data.setUint8(offset, 0x00);     // pattern 0
+  data.setUint8(offset + 1, 0xFF); // "---", end of song marker
+  offset += 2;
+
+  // Instruments offset
+  // 0 instruments, so do nothing here
+
+  // Samples offset
+  // 0x50 = Impulse Sample header size
+  for (let i = 0; i < SmpNum; i++) {
+    data.setUint32(offset, headerSize + (i * 0x50), true);
+    offset += 4;
+  }
+
+  // Patterns offset
+  data.setUint32(offset, headerSize + (SmpNum * 0x50), true);
+  offset += 4;
+
+  /**
+   * Impulse Sample
+   */
+  for (let i = 0; i < SmpNum; i++) {
+    writeString(data, offset, "IMPS");
+    offset += 4;
+
+    // DOS filename
+    offset += 12;
+
+    // Always null
+    offset++;
+
+    // GvL - global volume for instrument
+    data.setUint8(offset, 0x40);
+    offset++;
+
+    // Flg - bit 1 on = 16-bit; off = 8-bit
+    data.setUint8(offset, bitDepth === 16 ? 0x03 : 0x01);
+    offset++;
+
+    // Vol - default volume for instrument
+    data.setUint8(offset, 0x40);
+    offset++;
+
+    // Skip sample name
+    offset += 26;
+
+    // Cvt / convert (bitmask; bit 1 on = signed samples; off = unsigned)
+    // IT 2.02 and above use signed samples
+    // OpenMPT appears to automatically convert 8-bit unsigned audio to signed
+    data.setUint8(offset, 0x01);
+    offset++;
+
+    // DfP / default pan
+    data.setUint8(offset, 0x20);
+    offset++;
+
+    // Length - length of sample in no. of samples (not bytes)
+    data.setUint32(offset, wavData[i].sampleLength, true);
+    offset += 4;
+
+    // Loop Begin - start of loop (no of samples in, not bytes)
+    // ignored
+    offset += 4;
+
+    // Loop End - sample no. AFTER end of loop
+    // ignored
+    offset += 4;
+
+    // C5Speed - number of bytes a second for C-5 (ranges from 0->9999999)
+    data.setUint32(offset, 44100, true);
+    offset += 4;
+
+    // SusLoop Begin - start of sustain loop
+    // ignored
+    offset += 4;
+
+    // SusLoop End - sample no. AFTER end of sustain loop
+    // ignored
+    offset += 4;
+
+    // SamplePointer - offset of sample in file (the WAV data)
+    const prevSampleSize = wavData[i-1] !== undefined ? wavData[i-1].byteLength : 0;
+
+    data.setUint32(offset, headerSize + (SmpNum * 0x50) + 8 + (SmpNum * 4) + patternRows + prevSampleSize, true);
+    offset += 4;
+
+    // ViS - vibrato speed
+    // ViD - vibrato depth
+    // ViR - vibrato waveform type
+    // ViT - vibrato rate, rate at which vibrato is applied
+    // ignored
+    offset += 4;
+  }
+
+  /**
+   * Impulse Pattern
+   */
+  // Length - length of packed pattern, NOT including the 8 byte header
+  data.setUint16(offset, (SmpNum * 4) /* + (SmpNum * extraChannels * 4) */ + patternRows, true);
+  offset += 2;
+
+  // Rows - number of rows in this pattern
+  data.setUint16(offset, patternRows, true);
+  offset += 2;
+
+  // blank
+  offset += 4;
+
+  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
+  let channelNo = 0x81;
+
+  for (let i = 1; i <= SmpNum; i++) {
+    data.setUint8(offset, channelNo);
+    offset++;
+    channelNo++;
+
+    data.setUint8(offset, 0x03);
+    offset++;
+
+    data.setUint8(offset, 0x3C);
+    offset++;
+
+    data.setUint8(offset, i);
+    offset++;
+
+    // additional channels data
+    /*for (let j = 0; j < extraChannels; j++) {
+      data.setUint8(offset, channelNo);
+      offset++;
+      channelNo++;
+
+      data.setUint8(offset, 0x03);
+      offset++;
+
+      data.setUint8(offset, 0x3C);
+      offset++;
+
+      data.setUint8(offset, i);
+      offset++;
+    }*/
+  }
+
+  // One null byte per row (in this case, total duration of input audio)
+  offset += patternRows;
+
+  for (const channel of wavData) {
+    const wavDataView = new DataView(channel.slice());
+
+    for (let i = 0; i < wavDataView.byteLength; i++) {
+      data.setUint8(offset, wavDataView.getUint8(i));
+      offset++;
+    }
+  }
+
+  return data.buffer;
+}
+
+function writeString(view, offset, string) {
+  for (var i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+module.exports = itwriter;

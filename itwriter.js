@@ -48,7 +48,7 @@ const struct = {
 // thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation
 
 function itwriter(struct) {
-  const wavData = struct.samples;
+  const wavData = floatChannelsTo16bit(struct.samples[0].channels);
   const bitDepth = 16;
   const OrdNum = 2;
   const InsNum = 0;
@@ -325,6 +325,18 @@ function itwriter(struct) {
   }
 
   return data.buffer;
+}
+
+function floatChannelsTo16bit(channels) {
+  return channels.map((channel) => {
+    const int16Array = new Int16Array(channel.length);
+    channel.map((sample, i) => {
+      const s = Math.max(-1, Math.min(1, sample));
+      int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    });
+    int16Array.buffer.sampleLength = channel.length;
+    return int16Array.buffer;
+  });
 }
 
 function writeString(view, offset, string) {

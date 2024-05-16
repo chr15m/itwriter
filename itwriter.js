@@ -4,7 +4,45 @@
  * Converts JSON struture to an Impulse Tracker module file.
  * @param {Array} struct - see below
  * @returns {ArrayBuffer} containing the impulse tracker data to be downloaded or written to disk.
- * @note The JSON structure should have the following structure...
+ * @note The JSON structure should have the following structure
+
+const struct = {
+  "title": "My Song",
+  "bpm": 180,
+  "samples": [
+    {
+      "name": "000000156.wav",
+      "samplerate": 44100,
+      "data": [[...(new Array(4410))].map((v, i) => Math.sin(i/441))]
+    }
+  ],
+  "sequence": [0],
+  "patterns": [
+    {
+      "length": 64,
+      "channels": [
+        {
+          "name": "snares",
+          0: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
+          4: { "note": "C-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+        },
+        {
+          "name": "piano",
+          2: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
+          4: { "note": "G-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+        }
+      ]
+    }
+  ]
+};
+
+// TODO:
+// - encode stereo samples correctly
+// - use sample's samplerate
+// - add channel names
+// - multiple patterns
+// - order patterns correctly
+
  */
 
 // thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation

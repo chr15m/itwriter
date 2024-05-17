@@ -292,8 +292,6 @@ function serializePattern(offset, data) {
   const rows = 16;
   const channels = 1;
 
-  offset = 0;
-
   // Length - length of packed pattern, NOT including the 8 byte header
   data.setUint16(offset, (channels * 4) + rows, true);
   offset += 2;

@@ -148,27 +148,17 @@ function itwriter(struct) {
   // MsgLgth / message offset / reserved
   offset += 10;
 
-  // Channel pan - if stereo, pan L/R
+  // Channel initial pan
   // 0  = hard left
   // 32 = centre
   // 64 = hard right
-  if (wavData.length === 2) { // stereo
-    data.setUint8(offset, 0x00);
-    offset++;
-
-    data.setUint8(offset, 0x40);
-    offset++;
-  } else { // mono
+  // 0xA0 = mute
+  for (let i = 0; i < 64; i++) {
     data.setUint8(offset, 0x20);
     offset++;
   }
 
-  for (let i = 0; i < 64 - wavData.length /* - (extraChannels * wavData.length) */; i++) {
-    data.setUint8(offset, 0xA0);
-    offset++;
-  }
-
-  // Channel vol
+  // Channel initial vol
   for (let i = 0; i < 64; i++) {
     data.setUint8(offset, 0x40);
     offset++;

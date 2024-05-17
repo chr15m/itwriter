@@ -6,6 +6,8 @@ const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 
 const it = itwriter({
   "title": "itwriter example",
+  "bpm": 120,
+  "ticks": 6,
   "samples": [
     {
       "filename": "sine.wav",
@@ -14,6 +16,9 @@ const it = itwriter({
       "channels": [sine, sine]
     }
   ],
+  "channelnames": {
+    1: "snares"
+  },
   "order": [0, 1, 0],
   "patterns": [
     {

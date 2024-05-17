@@ -2,45 +2,15 @@
  * Converts JSON struture to an Impulse Tracker module file.
  * @param {Array} struct - see below
  * @returns {ArrayBuffer} containing the impulse tracker data to be downloaded or written to disk.
- * @note The JSON structure should have the following structure
-
-const struct = {
-  "title": "My Song",
-  "bpm": 180,
-  "samples": [
-    {
-      "name": "piano",
-      "filename": "000000156.wav",
-      "samplerate": 44100,
-      "channels": [[...(new Array(4410))].map((v, i) => Math.sin(i/441))]
-    }
-  ],
-  "sequence": [0],
-  "patterns": [
-    {
-      "length": 64,
-      "channels": [
-        {
-          "name": "piano",
-          0: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
-          4: { "note": "C-6", "sample": 0, "vol": "v64", "fx": "SD1" }
-        },
-        {
-          "name": "drums",
-          2: { "note": "E-6", "sample": 1, "vol": "v64", "fx": "SD1" },
-          4: { "note": "G-6", "sample": 1, "vol": "v64", "fx": "SD1" }
-        }
-      ]
-    }
-  ]
-};
+ * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - insert channel sequence data
+// - insert pattern sequence data from structure
+// - implement bpm + ticks from structure
 // - support multiple samples
 // - encode stereo samples
 // - use sample's actual samplerate
-// - support channel names
+// - implement channel names
 // - support embedded message
 //
 // DONE:

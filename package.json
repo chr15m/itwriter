@@ -4,6 +4,7 @@
     "jshint":"^2.13.6"
   },
   "scripts": {
-    "example": "node example.js && xmp example.it"
+    "example": "node example.js && xmp example.it",
+    "test": "node example.js && xmp -d wav example.it -o example.wav"
   }
 }

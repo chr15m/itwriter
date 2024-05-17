@@ -51,17 +51,18 @@ const struct = {
 function itwriter(struct) {
   const wavData = floatChannelsTo16bit(struct.samples[0].channels);
   const bitDepth = 16;
-  const OrdNum = 2;
+  const OrdNum = struct.order.length + 1;
   const InsNum = 0;
-  const SmpNum = wavData.length;
-  const PatNum = 1;
+  const SmpNum = struct.samples.length;
+  const PatNum = struct.patterns.length;
 
   // Round up duration and add a row to allow space
   const patternRows = 16;
 
   // Calculate output file size
   // Initial part of header is always 0xC0 / 192 bytes
-  const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4);
+  // Calculate the headerSize of the impulse tracker file
+  const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (struct.patterns.length * 4);
   const sampleSize  = 0x50 * SmpNum;
   const patternSize = 8 + (SmpNum * 4) + patternRows + (wavData.reduce((size, channel) => size + channel.byteLength, 0));
 
@@ -170,10 +171,14 @@ function itwriter(struct) {
     offset++;
   }
 
+  console.log(struct.order.length);
   // Orders - order in which the patterns are played
-  data.setUint8(offset, 0x00);     // pattern 0
-  data.setUint8(offset + 1, 0xFF); // "---", end of song marker
-  offset += 2;
+  for (let o=0; o<struct.order.length; o++) {
+    data.setUint8(offset, struct.order[o]);     // pattern 0
+    offset += 1;
+  }
+  data.setUint8(offset, 0xFF); // "---", end of song marker
+  offset += 1;
 
   // Instruments offset
   // 0 instruments, so do nothing here

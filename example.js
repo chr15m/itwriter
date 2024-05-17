@@ -15,7 +15,9 @@ const it = itwriter({
       "samplerate": 44100,
       "channels": [sine, sine]
     }
-  ]
+  ],
+  "order": [0, 0, 0],
+  "patterns": [{}]
 });
 console.log(it);
 fs.writeFileSync("example.it", Buffer.from(it));

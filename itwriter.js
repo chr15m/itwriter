@@ -295,7 +295,7 @@ function insertData(data, incoming, offset) {
 
 function serializePattern(pattern) {
   const rows = pattern.length;
-  const channels = 1;
+  const channels = pattern.channels.length;
 
   const dataSize = 8 + (channels * 4) + rows;
   const buffer = new ArrayBuffer(dataSize);
@@ -318,6 +318,7 @@ function serializePattern(pattern) {
 
   // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
   for (let i = 1; i <= channels; i++) {
+    // store the channelMask
     data.setUint8(offset, channelNo);
     offset++;
 

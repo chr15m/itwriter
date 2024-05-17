@@ -16,21 +16,27 @@ const it = itwriter({
       "channels": [sine, sine]
     }
   ],
-  "order": [0, 0, 0],
+  "order": [0, 1, 0],
   "patterns": [
     {
-      "length": 64,
+      "length": 16,
       "channels": [
         {
-          0: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
-          4: { "note": "C-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+          0: { "note": "E-6", "instrument": 0, "vol": "v64" },
+          4: { "note": "C-6", "instrument": 0, "vol": "v64" }
         },
         {
-          2: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
-          4: { "note": "G-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+          2: { "note": "E-6", "instrument": 0, "vol": "v64", "fx": "SD1" },
+          4: { "note": "G-6", "instrument": 0, "vol": "v64" }
         }
       ]
-    }
+    },
+    {
+      "length": 4,
+      "channels": [
+        {0: {"note": "C-5", "instrument": 0, "vol": "v64"}}
+      ]
+    },
   ]
 });
 console.log(it);

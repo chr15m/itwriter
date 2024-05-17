@@ -53,7 +53,10 @@ function itwriter(struct) {
   const OrdNum = struct.order.length + 1;
   const InsNum = 0;
   const SmpNum = struct.samples.length;
+
+  const patternBuffers = struct.patterns.map((pattern) => serializePattern(pattern));
   const PatNum = struct.patterns.length;
+  // const PatNum = struct.patterns.length;
 
   // TODO: replace these
   const wavData = floatChannelsTo16bit(struct.samples[0].channels);
@@ -61,17 +64,15 @@ function itwriter(struct) {
   // Calculate output file size
   // Initial part of header is always 0xC0 / 192 bytes
   // Calculate the headerSize of the impulse tracker file
-  const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (struct.patterns.length * 4);
+  const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4);
   const sampleHeaderSize  = 0x50 * SmpNum;
-  const rows = 16;
-  const channels = 1;
-  const patternsSize = (8 + (channels * 4) + rows) * 2;
+
+  const patternsSize = patternBuffers.reduce((size, buffer) => size + buffer.byteLength, 0);
   const sampleDataSize = (wavData.reduce((size, channel) => size + channel.byteLength, 0));
 
   // Output buffer/data view
   const buffer = new ArrayBuffer(headerSize + sampleHeaderSize + patternsSize + sampleDataSize);
   const data   = new DataView(buffer);
-
   let offset = 0;
 
   // Magic number
@@ -187,13 +188,20 @@ function itwriter(struct) {
   // Samples offset
   // 0x50 = Impulse Sample header size
   for (let i = 0; i < SmpNum; i++) {
+    // TODO: add the offsets for multiple samples
     data.setUint32(offset, headerSize + (i * 0x50), true);
     offset += 4;
   }
 
   // Patterns offset
-  data.setUint32(offset, headerSize + (SmpNum * 0x50), true);
-  offset += 4;
+  for (let i = 0; i < PatNum; i++) {
+    let patternOffset = 0;
+    for (let o = 0; o < i; o++) {
+      patternOffset += patternBuffers[o].byteLength;
+    }
+    data.setUint32(offset, headerSize + (SmpNum * 0x50) + patternOffset, true);
+    offset += 4;
+  }
 
   /**
    * Impulse Sample
@@ -273,8 +281,10 @@ function itwriter(struct) {
     offset += 4;
   }
 
-  offset = serializePattern(offset, data);
-  offset = serializePattern(offset, data);
+  for (let p = 0; p < patternBuffers.length; p++) {
+    insertData(data, patternBuffers[p], offset);
+    offset += patternBuffers[p].byteLength;
+  }
 
   for (const channel of wavData) {
     const wavDataView = new DataView(channel.slice());
@@ -288,9 +298,19 @@ function itwriter(struct) {
   return data.buffer;
 }
 
-function serializePattern(offset, data) {
-  const rows = 16;
+function insertData(data, incoming, offset) {
+  const view = new Uint8Array(data.buffer);
+  view.set(new Uint8Array(incoming), offset);
+}
+
+function serializePattern(pattern) {
+  const rows = pattern.length;
   const channels = 1;
+
+  const dataSize = 8 + (channels * 4) + rows;
+  const buffer = new ArrayBuffer(dataSize);
+  const data = new DataView(buffer);
+  let offset = 0;
 
   // Length - length of packed pattern, NOT including the 8 byte header
   data.setUint16(offset, (channels * 4) + rows, true);
@@ -303,19 +323,23 @@ function serializePattern(offset, data) {
   // blank
   offset += 4;
 
-  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
+  // channelMask
   let channelNo = 0x81;
 
+  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
   for (let i = 1; i <= channels; i++) {
     data.setUint8(offset, channelNo);
     offset++;
 
-    data.setUint8(offset, 0x03);
+    // maskVariable
+    data.setUint8(offset, 0x03); // note + instrument stored
     offset++;
 
-    data.setUint8(offset, 0x3C);
+    // The note
+    data.setUint8(offset, 0x3C); // (C-5 hardcoded)
     offset++;
 
+    // The instrument/sample number
     data.setUint8(offset, i);
     offset++;
 
@@ -325,7 +349,7 @@ function serializePattern(offset, data) {
   // null byte for every empty remaining row
   offset += rows;
 
-  return offset;
+  return buffer;
 }
 
 function floatChannelsTo16bit(channels) {

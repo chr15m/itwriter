@@ -17,7 +17,21 @@ const it = itwriter({
     }
   ],
   "order": [0, 0, 0],
-  "patterns": [{}]
+  "patterns": [
+    {
+      "length": 64,
+      "channels": [
+        {
+          0: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
+          4: { "note": "C-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+        },
+        {
+          2: { "note": "E-6", "sample": 0, "vol": "v64", "fx": "SD1" },
+          4: { "note": "G-6", "sample": 0, "vol": "v64", "fx": "SD1" }
+        }
+      ]
+    }
+  ]
 });
 console.log(it);
 fs.writeFileSync("example.it", Buffer.from(it));

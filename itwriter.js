@@ -1,5 +1,3 @@
-/* jshint esversion: 6 */
-
 /**
  * Converts JSON struture to an Impulse Tracker module file.
  * @param {Array} struct - see below

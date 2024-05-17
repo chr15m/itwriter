@@ -56,8 +56,6 @@ function itwriter(struct) {
   const PatNum = struct.patterns.length;
 
   // TODO: replace these
-  // Round up duration and add a row to allow space
-  const patternRows = 16;
   const wavData = floatChannelsTo16bit(struct.samples[0].channels);
 
   // Calculate output file size
@@ -65,11 +63,13 @@ function itwriter(struct) {
   // Calculate the headerSize of the impulse tracker file
   const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (struct.patterns.length * 4);
   const sampleHeaderSize  = 0x50 * SmpNum;
-  const patternSize = 8 + (SmpNum * 4) + patternRows;
+  const rows = 16;
+  const channels = 1;
+  const patternsSize = (8 + (channels * 4) + rows) * 2;
   const sampleDataSize = (wavData.reduce((size, channel) => size + channel.byteLength, 0));
 
   // Output buffer/data view
-  const buffer = new ArrayBuffer(headerSize + sampleHeaderSize + patternSize + sampleDataSize);
+  const buffer = new ArrayBuffer(headerSize + sampleHeaderSize + patternsSize + sampleDataSize);
   const data   = new DataView(buffer);
 
   let offset = 0;
@@ -173,7 +173,6 @@ function itwriter(struct) {
     offset++;
   }
 
-  console.log(struct.order.length);
   // Orders - order in which the patterns are played
   for (let o=0; o<struct.order.length; o++) {
     data.setUint8(offset, struct.order[o]);     // pattern 0
@@ -263,7 +262,7 @@ function itwriter(struct) {
     // SamplePointer - offset of sample in file (the WAV data)
     const prevSampleSize = wavData[i-1] !== undefined ? wavData[i-1].byteLength : 0;
 
-    data.setUint32(offset, headerSize + sampleHeaderSize + patternSize + prevSampleSize, true);
+    data.setUint32(offset, headerSize + sampleHeaderSize + patternsSize + prevSampleSize, true);
     offset += 4;
 
     // ViS - vibrato speed
@@ -274,56 +273,8 @@ function itwriter(struct) {
     offset += 4;
   }
 
-  /**
-   * Impulse Pattern
-   */
-  // Length - length of packed pattern, NOT including the 8 byte header
-  data.setUint16(offset, (SmpNum * 4) /* + (SmpNum * extraChannels * 4) */ + patternRows, true);
-  offset += 2;
-
-  // Rows - number of rows in this pattern
-  data.setUint16(offset, patternRows, true);
-  offset += 2;
-
-  // blank
-  offset += 4;
-
-  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
-  let channelNo = 0x81;
-
-  for (let i = 1; i <= SmpNum; i++) {
-    data.setUint8(offset, channelNo);
-    offset++;
-    channelNo++;
-
-    data.setUint8(offset, 0x03);
-    offset++;
-
-    data.setUint8(offset, 0x3C);
-    offset++;
-
-    data.setUint8(offset, i);
-    offset++;
-
-    // additional channels data
-    /*for (let j = 0; j < extraChannels; j++) {
-      data.setUint8(offset, channelNo);
-      offset++;
-      channelNo++;
-
-      data.setUint8(offset, 0x03);
-      offset++;
-
-      data.setUint8(offset, 0x3C);
-      offset++;
-
-      data.setUint8(offset, i);
-      offset++;
-    }*/
-  }
-
-  // One null byte per row (in this case, total duration of input audio)
-  offset += patternRows;
+  offset = serializePattern(offset, data);
+  offset = serializePattern(offset, data);
 
   for (const channel of wavData) {
     const wavDataView = new DataView(channel.slice());
@@ -335,6 +286,45 @@ function itwriter(struct) {
   }
 
   return data.buffer;
+}
+
+function serializePattern(offset, data) {
+  const rows = 16;
+  const channels = 1;
+
+  // Length - length of packed pattern, NOT including the 8 byte header
+  data.setUint16(offset, (channels * 4) + rows, true);
+  offset += 2;
+
+  // Rows - number of rows in this pattern
+  data.setUint16(offset, rows, true);
+  offset += 2;
+
+  // blank
+  offset += 4;
+
+  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
+  let channelNo = 0x81;
+
+  for (let i = 1; i <= channels; i++) {
+    data.setUint8(offset, channelNo);
+    offset++;
+
+    data.setUint8(offset, 0x03);
+    offset++;
+
+    data.setUint8(offset, 0x3C);
+    offset++;
+
+    data.setUint8(offset, i);
+    offset++;
+
+    channelNo++;
+  }
+
+  // null byte for every empty remaining row
+  offset += rows;
+  return offset;
 }
 
 function floatChannelsTo16bit(channels) {

@@ -49,25 +49,27 @@ const struct = {
 // thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation
 
 function itwriter(struct) {
-  const wavData = floatChannelsTo16bit(struct.samples[0].channels);
   const bitDepth = 16;
   const OrdNum = struct.order.length + 1;
   const InsNum = 0;
   const SmpNum = struct.samples.length;
   const PatNum = struct.patterns.length;
 
+  // TODO: replace these
   // Round up duration and add a row to allow space
   const patternRows = 16;
+  const wavData = floatChannelsTo16bit(struct.samples[0].channels);
 
   // Calculate output file size
   // Initial part of header is always 0xC0 / 192 bytes
   // Calculate the headerSize of the impulse tracker file
   const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (struct.patterns.length * 4);
   const sampleSize  = 0x50 * SmpNum;
-  const patternSize = 8 + (SmpNum * 4) + patternRows + (wavData.reduce((size, channel) => size + channel.byteLength, 0));
+  const patternSize = 8 + (SmpNum * 4) + patternRows;
+  const sampleDataSize = (wavData.reduce((size, channel) => size + channel.byteLength, 0));
 
   // Output buffer/data view
-  const buffer = new ArrayBuffer(headerSize + sampleSize + patternSize);
+  const buffer = new ArrayBuffer(headerSize + sampleSize + patternSize + sampleDataSize);
   const data   = new DataView(buffer);
 
   let offset = 0;

@@ -64,12 +64,12 @@ function itwriter(struct) {
   // Initial part of header is always 0xC0 / 192 bytes
   // Calculate the headerSize of the impulse tracker file
   const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (struct.patterns.length * 4);
-  const sampleSize  = 0x50 * SmpNum;
+  const sampleHeaderSize  = 0x50 * SmpNum;
   const patternSize = 8 + (SmpNum * 4) + patternRows;
   const sampleDataSize = (wavData.reduce((size, channel) => size + channel.byteLength, 0));
 
   // Output buffer/data view
-  const buffer = new ArrayBuffer(headerSize + sampleSize + patternSize + sampleDataSize);
+  const buffer = new ArrayBuffer(headerSize + sampleHeaderSize + patternSize + sampleDataSize);
   const data   = new DataView(buffer);
 
   let offset = 0;
@@ -263,7 +263,7 @@ function itwriter(struct) {
     // SamplePointer - offset of sample in file (the WAV data)
     const prevSampleSize = wavData[i-1] !== undefined ? wavData[i-1].byteLength : 0;
 
-    data.setUint32(offset, headerSize + (SmpNum * 0x50) + 8 + (SmpNum * 4) + patternRows + prevSampleSize, true);
+    data.setUint32(offset, headerSize + sampleHeaderSize + patternSize + prevSampleSize, true);
     offset += 4;
 
     // ViS - vibrato speed

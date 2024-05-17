@@ -38,9 +38,14 @@ const struct = {
 };
 
 // TODO:
-// - encode stereo samples correctly
-// - use sample's samplerate
-// - add channel names
+// - insert channel sequence data
+// - support multiple samples
+// - encode stereo samples
+// - use sample's actual samplerate
+// - support channel names
+// - support embedded message
+//
+// DONE:
 // - multiple patterns
 // - order patterns correctly
 
@@ -56,14 +61,13 @@ function itwriter(struct) {
 
   const patternBuffers = struct.patterns.map((pattern) => serializePattern(pattern));
   const PatNum = struct.patterns.length;
-  // const PatNum = struct.patterns.length;
 
   // TODO: replace these
   const wavData = floatChannelsTo16bit(struct.samples[0].channels);
 
   // Calculate output file size
-  // Initial part of header is always 0xC0 / 192 bytes
   // Calculate the headerSize of the impulse tracker file
+  // Initial part of header is always 0xC0 / 192 bytes
   const headerSize  = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4);
   const sampleHeaderSize  = 0x50 * SmpNum;
 
@@ -127,10 +131,8 @@ function itwriter(struct) {
   data.setUint8(offset, 0x30);
   offset++;
 
-  // IS - initial speed of song
-  // From OpenMPT docs: "In OpenMPT, 'Speed' means 'ticks per row'"
-  // Set to 24 as "classic tempo" units are 24 ticks per minute
-  data.setUint8(offset, 24);
+  // IS - initial speed of song - ticks per row
+  data.setUint8(offset, 6);
   offset++;
 
   // IT - initial tempo of song
@@ -178,7 +180,7 @@ function itwriter(struct) {
   // Samples offset
   // 0x50 = Impulse Sample header size
   for (let i = 0; i < SmpNum; i++) {
-    // TODO: add the offsets for multiple samples
+    // TODO: fix the offsets for multiple samples, including stereo
     data.setUint32(offset, headerSize + (i * 0x50), true);
     offset += 4;
   }
@@ -288,11 +290,6 @@ function itwriter(struct) {
   return data.buffer;
 }
 
-function insertData(data, incoming, offset) {
-  const view = new Uint8Array(data.buffer);
-  view.set(new Uint8Array(incoming), offset);
-}
-
 function serializePattern(pattern) {
   const rows = pattern.length;
   const channels = pattern.channels.length;
@@ -341,6 +338,13 @@ function serializePattern(pattern) {
   offset += rows;
 
   return buffer;
+}
+
+/*** utility functions ***/
+
+function insertData(data, incoming, offset) {
+  const view = new Uint8Array(data.buffer);
+  view.set(new Uint8Array(incoming), offset);
 }
 
 function floatChannelsTo16bit(channels) {

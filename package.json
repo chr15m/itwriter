@@ -5,6 +5,6 @@
   },
   "scripts": {
     "example": "node example.js && xmp example.it",
-    "test": "node example.js && xmp -d wav example.it -o example.wav 2>&1 | grep -c 'Unrecognized file format' | grep -q 0"
+    "test": "node example.js && xmp -d wav example.it -o example.wav 2>&1 | tee /dev/stderr | grep -qc 'Duration'"
   }
 }

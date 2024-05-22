@@ -29,15 +29,19 @@ const it = itwriter({
           4: { "note": "C-6", "instrument": 0, "vol": "v64" }
         },
         {
-          2: { "note": "E-6", "instrument": 0, "vol": "v64", "fx": "SD1" },
-          4: { "note": "G-6", "instrument": 0, "vol": "v64" }
+          2: { "note": "E-6", "vol": "v64", "fx": "SD1" },
+          4: { "note": "G-6", "instrument": 1, "vol": "v32" }
         }
       ]
     },
     {
-      "length": 4,
+      "length": 8,
       "channels": [
-        {0: {"note": "C-5", "instrument": 0, "vol": "v64"}}
+        {
+          0: {"note": "C-5", "instrument": 0, "vol": "v64"},
+          1: {"vol": "p54"},
+          3: {"vol": "g03"}
+        }
       ]
     },
   ]

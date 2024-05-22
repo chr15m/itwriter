@@ -5,7 +5,6 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - insert pattern sequence data from structure
 // - implement bpm + ticks from structure
 // - support multiple samples
 // - encode stereo samples
@@ -14,6 +13,7 @@
 // - support embedded message
 //
 // DONE:
+// - insert pattern sequence data from structure
 // - multiple patterns
 // - order patterns correctly
 
@@ -143,7 +143,7 @@ function itwriter(struct) {
   offset += 1;
 
   // Instruments offset
-  // 0 instruments, so do nothing here
+  // no instruments, using samples only
 
   // Samples offset
   // 0x50 = Impulse Sample header size
@@ -262,53 +262,93 @@ function serializePattern(pattern) {
   const rows = pattern.length;
   const channels = pattern.channels.length;
 
-  const dataSize = 8 + (channels * 4) + rows;
-  const buffer = new ArrayBuffer(dataSize);
-  const data = new DataView(buffer);
-  let offset = 0;
+  const result = [];
 
-  // Length - length of packed pattern, NOT including the 8 byte header
-  data.setUint16(offset, (channels * 4) + rows, true);
-  offset += 2;
+  // Length and Rows - placeholder for now
+  result.push(0, 0, rows & 0xFF, (rows >> 8) & 0xFF);
 
-  // Rows - number of rows in this pattern
-  data.setUint16(offset, rows, true);
-  offset += 2;
+  // Blank space
+  result.push(0, 0, 0, 0);
 
-  // blank
-  offset += 4;
+  for (let row = 0; row < rows; row++) {
+    for (let channel = 0; channel < channels; channel++) {
+      if (pattern.channels[channel][row] !== undefined) {
+        let channelData = pattern.channels[channel][row];
+        let maskVariable = 0;
+        if (channelData.note) maskVariable |= 1;
+        if (channelData.instrument != null) maskVariable |= 2;
+        if (channelData.vol) maskVariable |= 4;
+        if (channelData.fx) maskVariable |= 8;
 
-  // channelMask
-  let channelNo = 0x81;
+        // Channel marker and mask variable
+        result.push(0x81 + channel);
+        result.push(maskVariable);
 
-  // Packed pattern - values below correspond to "C-5 01 v64 ..." etc.
-  for (let i = 1; i <= channels; i++) {
-    // store the channelMask
-    data.setUint8(offset, channelNo);
-    offset++;
+        if (maskVariable & 1) {
+          result.push(noteToValue(channelData.note));
+        }
 
-    // maskVariable
-    data.setUint8(offset, 0x03); // note + instrument stored
-    offset++;
+        if (maskVariable & 2) {
+          result.push(channelData.instrument + 1);
+        }
 
-    // The note
-    data.setUint8(offset, 0x3C); // (C-5 hardcoded)
-    offset++;
+        if (maskVariable & 4) {
+          result.push(volToValue(channelData.vol));
+        }
 
-    // The instrument/sample number
-    data.setUint8(offset, i);
-    offset++;
-
-    channelNo++;
+        if (maskVariable & 8) {
+          let fx = channelData.fx;
+          let fxChar = fx.charCodeAt(0) - 64; // Convert 'A'-'Z' to 1-26
+          let fxVal = parseInt(fx.slice(1), 16);
+          result.push(fxChar);
+          result.push(fxVal);
+        }
+      }
+    }
+    result.push(0); // End of row
   }
 
-  // null byte for every empty remaining row
-  offset += rows;
+  // Convert to ArrayBuffer
+  let length = result.length - 8; // Packed pattern length, excluding the 8 byte header
+  result[0] = length & 0xFF;
+  result[1] = (length >> 8) & 0xFF;
+
+  const buffer = new ArrayBuffer(result.length);
+  const dataView = new DataView(buffer);
+
+  for (let i = 0; i < result.length; i++) {
+    dataView.setUint8(i, result[i]);
+  }
 
   return buffer;
 }
 
 /*** utility functions ***/
+
+function noteToValue(note) {
+  const notes = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-'];
+  const octave = parseInt(note[2]);
+  const noteIdx = notes.indexOf(note.slice(0, 2));
+  return noteIdx + octave * 12;
+}
+
+function volToValue(vol) {
+  const volType = vol[0];
+  const volVal = parseInt(vol.slice(1));
+  switch (volType) {
+    case 'v': return volVal;                // Volume set
+    case 'p': return 128 + volVal;          // Panning set
+    case 'a': return 65 + volVal;           // Fine volume slide up
+    case 'b': return 75 + volVal;           // Fine volume slide down
+    case 'c': return 85 + volVal;           // Volume slide up
+    case 'd': return 95 + volVal;           // Volume slide down
+    case 'e': return 105 + volVal;          // Portamento down
+    case 'f': return 115 + volVal;          // Portamento up
+    case 'g': return 193 + volVal;          // Tone portamento
+    case 'h': return 203 + volVal;          // Vibrato depth
+    default: return 0;                      // Default case if not recognized
+  }
+}
 
 function insertData(data, incoming, offset) {
   const view = new Uint8Array(data.buffer);

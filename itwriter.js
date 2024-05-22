@@ -5,13 +5,13 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - support multiple samples
 // - encode stereo samples
-// - use sample's actual samplerate
 // - implement channel names
 // - support embedded message
 //
 // DONE:
+// - support multiple samples
+// - use sample's actual samplerate
 // - implement bpm + ticks from structure
 // - insert pattern sequence data from structure
 // - multiple patterns
@@ -22,16 +22,12 @@
 // thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation
 
 function itwriter(struct) {
-  const bitDepth = 16;
   const OrdNum = struct.order.length + 1;
   const InsNum = 0;
   const SmpNum = struct.samples.length;
 
   const patternBuffers = struct.patterns.map((pattern) => serializePattern(pattern));
   const PatNum = struct.patterns.length;
-
-  // TODO: replace these
-  const wavData = floatChannelsTo16bit(struct.samples[0].channels);
 
   // Calculate output file size
   // Calculate the headerSize of the impulse tracker file
@@ -40,10 +36,23 @@ function itwriter(struct) {
   const sampleHeaderSize  = 0x50 * SmpNum;
 
   const patternsSize = patternBuffers.reduce((size, buffer) => size + buffer.byteLength, 0);
-  const sampleDataSize = (wavData.reduce((size, channel) => size + channel.byteLength, 0));
+
+  const [ _lastSampleOffset, sampleHeaderBuffers ] = struct.samples.reduce((collection, sample) => {
+    const [ sampleOffset, buffers ] = collection;
+    console.log("sampleOffset", sampleOffset, buffers);
+    const buffer = serializeSampleHeader(sample, sampleOffset);
+    return [
+      sampleOffset + sample.channels[0].length * 2 /* 16 bit */,
+      buffers.concat([buffer])
+    ];
+  }, [headerSize + sampleHeaderSize + patternsSize, []]);
+  const sampleDataSize = (struct.samples.reduce((size, sample) => size + sample.channels[0].length * 2 /* 16 bit */, 0));
+  console.log("sampleDataSize", sampleDataSize);
+  const fileSize = headerSize + sampleHeaderSize + patternsSize + sampleDataSize;
+  console.log("fileSize", fileSize);
 
   // Output buffer/data view
-  const buffer = new ArrayBuffer(headerSize + sampleHeaderSize + patternsSize + sampleDataSize);
+  const buffer = new ArrayBuffer(fileSize);
   const data   = new DataView(buffer);
   let offset = 0;
 
@@ -163,97 +172,110 @@ function itwriter(struct) {
     offset += 4;
   }
 
-  /**
-   * Impulse Sample
-   */
-  for (let i = 0; i < SmpNum; i++) {
-    writeString(data, offset, "IMPS");
-    offset += 4;
-
-    // DOS filename
-    writeString(data, offset, (struct.samples[0].filename || struct.samples[0].name || "").slice(0, 12));
-    offset += 12;
-
-    // Always null
-    offset++;
-
-    // GvL - global volume for instrument
-    data.setUint8(offset, 0x40);
-    offset++;
-
-    // Flg - bit 1 on = 16-bit; off = 8-bit
-    data.setUint8(offset, bitDepth === 16 ? 0x03 : 0x01);
-    offset++;
-
-    // Vol - default volume for instrument
-    data.setUint8(offset, 0x40);
-    offset++;
-
-    // Skip sample name
-    writeString(data, offset, (struct.samples[0].name || struct.samples[0].filename || "").slice(0, 26));
-    offset += 26;
-
-    // Cvt / convert (bitmask; bit 1 on = signed samples; off = unsigned)
-    // IT 2.02 and above use signed samples
-    // OpenMPT appears to automatically convert 8-bit unsigned audio to signed
-    data.setUint8(offset, 0x01);
-    offset++;
-
-    // DfP / default pan
-    data.setUint8(offset, 0x20);
-    offset++;
-
-    // Length - length of sample in no. of samples (not bytes)
-    data.setUint32(offset, wavData[i].sampleLength, true);
-    offset += 4;
-
-    // Loop Begin - start of loop (no of samples in, not bytes)
-    // ignored
-    offset += 4;
-
-    // Loop End - sample no. AFTER end of loop
-    // ignored
-    offset += 4;
-
-    // C5Speed - number of bytes a second for C-5 (ranges from 0->9999999)
-    data.setUint32(offset, 44100, true);
-    offset += 4;
-
-    // SusLoop Begin - start of sustain loop
-    // ignored
-    offset += 4;
-
-    // SusLoop End - sample no. AFTER end of sustain loop
-    // ignored
-    offset += 4;
-
-    // SamplePointer - offset of sample in file (the WAV data)
-    const prevSampleSize = wavData[i-1] !== undefined ? wavData[i-1].byteLength : 0;
-
-    data.setUint32(offset, headerSize + sampleHeaderSize + patternsSize + prevSampleSize, true);
-    offset += 4;
-
-    // ViS - vibrato speed
-    // ViD - vibrato depth
-    // ViR - vibrato waveform type
-    // ViT - vibrato rate, rate at which vibrato is applied
-    // ignored
-    offset += 4;
+  // Sample headers
+  for (let s = 0; s < sampleHeaderBuffers.length; s++) {
+    insertData(data, sampleHeaderBuffers[s], offset);
+    offset += sampleHeaderBuffers[s].byteLength;
   }
 
+  // Pattern data
   for (let p = 0; p < patternBuffers.length; p++) {
     insertData(data, patternBuffers[p], offset);
     offset += patternBuffers[p].byteLength;
   }
 
-  for (const channel of wavData) {
-    const wavDataView = new DataView(channel.slice());
-
-    for (let i = 0; i < wavDataView.byteLength; i++) {
-      data.setUint8(offset, wavDataView.getUint8(i));
-      offset++;
-    }
+  // Sample data
+  for (let s = 0; s < SmpNum; s++) {
+    const wavData = floatChannelsTo16bit(struct.samples[s].channels);
+    console.log("sample", s, offset);
+    //for (const channel in wavData) {
+      const wavDataView = new DataView(wavData[0]);
+      for (let i = 0; i < wavDataView.byteLength; i++) {
+        data.setUint8(offset, wavDataView.getUint8(i));
+        offset++;
+      }
+    //}
   }
+
+  return data.buffer;
+}
+
+function serializeSampleHeader(sample, previousOffset) {
+  const buffer = new ArrayBuffer(0x50);
+  const data = new DataView(buffer);
+  let offset = 0;
+  const bitDepth = 16;
+
+  writeString(data, offset, "IMPS");
+  offset += 4;
+
+  // DOS filename
+  writeString(data, offset, (sample.filename || sample.name || "").slice(0, 12));
+  offset += 12;
+
+  // Always null
+  offset++;
+
+  // GvL - global volume for instrument
+  data.setUint8(offset, 0x40);
+  offset++;
+
+  // Flg - bit 1 on = 16-bit; off = 8-bit
+  data.setUint8(offset, bitDepth === 16 ? 0x03 : 0x01);
+  offset++;
+
+  // Vol - default volume for instrument
+  data.setUint8(offset, 0x40);
+  offset++;
+
+  // Skip sample name
+  writeString(data, offset, (sample.name || sample.filename || "").slice(0, 26));
+  offset += 26;
+
+  // Cvt / convert (bitmask; bit 1 on = signed samples; off = unsigned)
+  // IT 2.02 and above use signed samples
+  // OpenMPT appears to automatically convert 8-bit unsigned audio to signed
+  data.setUint8(offset, 0x01);
+  offset++;
+
+  // DfP / default pan
+  data.setUint8(offset, 0x20);
+  offset++;
+
+  // Length - length of sample in no. of samples (not bytes)
+  data.setUint32(offset, sample.channels[0].length, true);
+  offset += 4;
+
+  // Loop Begin - start of loop (no of samples in, not bytes)
+  // ignored
+  offset += 4;
+
+  // Loop End - sample no. AFTER end of loop
+  // ignored
+  offset += 4;
+
+  // C5Speed - number of bytes a second for C-5 (ranges from 0->9999999)
+  data.setUint32(offset, sample.samplerate, true);
+  offset += 4;
+
+  // SusLoop Begin - start of sustain loop
+  // ignored
+  offset += 4;
+
+  // SusLoop End - sample no. AFTER end of sustain loop
+  // ignored
+  offset += 4;
+
+  // SamplePointer - offset of sample in file (the WAV data)
+  data.setUint32(offset, previousOffset, true);
+  offset += 4;
+
+  // ViS - vibrato speed
+  // ViD - vibrato depth
+  // ViR - vibrato waveform type
+  // ViT - vibrato rate, rate at which vibrato is applied
+  // ignored
+  offset += 4;
 
   return data.buffer;
 }

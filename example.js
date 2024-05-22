@@ -3,6 +3,8 @@ const fs = require("fs");
 const itwriter = require("./itwriter.js");
 
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
+const square = [...(new Array(4410))].map((v, i) => Math.sin(i/10) > 0 ? 1 : -1);
+const noisefn = () => [...(new Array(441))].map((v, i) => Math.random() * 2 - 1);
 
 const it = itwriter({
   "title": "itwriter example",
@@ -14,6 +16,18 @@ const it = itwriter({
       "name": "sinewave",
       "samplerate": 44100,
       "channels": [sine, sine]
+    },
+    {
+      "filename": "sqr.wav",
+      "name": "brutal square",
+      "samplerate": 44100,
+      "channels": [square]
+    },
+    {
+      "filename": "noise.wav",
+      "name": "noise clip",
+      "samplerate": 22050,
+      "channels": [noisefn(), noisefn()]
     }
   ],
   "channelnames": {
@@ -40,7 +54,8 @@ const it = itwriter({
         {
           0: {"note": "C-5", "instrument": 0, "vol": "v64"},
           1: {"vol": "p54"},
-          3: {"vol": "g03"}
+          3: {"vol": "g03"},
+          5: {"note": "C-5", "instrument": 2, "vol": "v64"},
         }
       ]
     },

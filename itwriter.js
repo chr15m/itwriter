@@ -5,11 +5,11 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - encode stereo samples
 // - implement channel names
 // - support embedded message
 //
 // DONE:
+// - encode stereo samples
 // - support multiple samples
 // - use sample's actual samplerate
 // - implement bpm + ticks from structure
@@ -39,17 +39,14 @@ function itwriter(struct) {
 
   const [ _lastSampleOffset, sampleHeaderBuffers ] = struct.samples.reduce((collection, sample) => {
     const [ sampleOffset, buffers ] = collection;
-    console.log("sampleOffset", sampleOffset, buffers);
     const buffer = serializeSampleHeader(sample, sampleOffset);
     return [
-      sampleOffset + sample.channels[0].length * 2 /* 16 bit */,
+      sampleOffset + sample.channels[0].length * 2 /* 16 bit */ * sample.channels.length,
       buffers.concat([buffer])
     ];
   }, [headerSize + sampleHeaderSize + patternsSize, []]);
-  const sampleDataSize = (struct.samples.reduce((size, sample) => size + sample.channels[0].length * 2 /* 16 bit */, 0));
-  console.log("sampleDataSize", sampleDataSize);
+  const sampleDataSize = (struct.samples.reduce((size, sample) => size + sample.channels[0].length * 2 /* 16 bit */ * sample.channels.length, 0));
   const fileSize = headerSize + sampleHeaderSize + patternsSize + sampleDataSize;
-  console.log("fileSize", fileSize);
 
   // Output buffer/data view
   const buffer = new ArrayBuffer(fileSize);
@@ -157,7 +154,6 @@ function itwriter(struct) {
   // Samples offset
   // 0x50 = Impulse Sample header size
   for (let i = 0; i < SmpNum; i++) {
-    // TODO: fix the offsets for multiple samples, including stereo
     data.setUint32(offset, headerSize + (i * 0x50), true);
     offset += 4;
   }
@@ -187,14 +183,10 @@ function itwriter(struct) {
   // Sample data
   for (let s = 0; s < SmpNum; s++) {
     const wavData = floatChannelsTo16bit(struct.samples[s].channels);
-    console.log("sample", s, offset);
-    //for (const channel in wavData) {
-      const wavDataView = new DataView(wavData[0]);
-      for (let i = 0; i < wavDataView.byteLength; i++) {
-        data.setUint8(offset, wavDataView.getUint8(i));
-        offset++;
-      }
-    //}
+    for (let c = 0; c < wavData.length; c++) {
+      insertData(data, wavData[0], offset);
+      offset += wavData[0].byteLength;
+    }
   }
 
   return data.buffer;
@@ -220,8 +212,13 @@ function serializeSampleHeader(sample, previousOffset) {
   data.setUint8(offset, 0x40);
   offset++;
 
-  // Flg - bit 1 on = 16-bit; off = 8-bit
-  data.setUint8(offset, bitDepth === 16 ? 0x03 : 0x01);
+  // Flg
+  // bit 0 = sample associated with this header
+  // bit 1 on = 16-bit; off = 8-bit
+  // bit 2 on = stereo; off = mono
+  const flagBitDepth = (bitDepth === 16 ? 0x02 : 0x00);
+  const flagStereo = (sample.channels.length === 2 ? 0x04 : 0x00);
+  data.setUint8(offset, 0x01 | flagBitDepth | flagStereo);
   offset++;
 
   // Vol - default volume for instrument

@@ -5,7 +5,6 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - implement bpm + ticks from structure
 // - support multiple samples
 // - encode stereo samples
 // - use sample's actual samplerate
@@ -13,6 +12,7 @@
 // - support embedded message
 //
 // DONE:
+// - implement bpm + ticks from structure
 // - insert pattern sequence data from structure
 // - multiple patterns
 // - order patterns correctly
@@ -100,11 +100,11 @@ function itwriter(struct) {
   offset++;
 
   // IS - initial speed of song - ticks per row
-  data.setUint8(offset, 6);
+  data.setUint8(offset, (struct.ticks || 6));
   offset++;
 
-  // IT - initial tempo of song
-  data.setUint8(offset, 0x78); // 120 BPM
+  // IT - initial tempo / BPM of song
+  data.setUint8(offset, (struct.bpm || 120));
   offset++;
 
   // Sep - panning separation between channels

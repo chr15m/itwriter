@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-const itwriter = require("./itwriter.js");
+const itwriter = require("./index.js");
 
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 const square = [...(new Array(4410))].map((v, i) => Math.sin(i/10) > 0 ? 1 : -1);

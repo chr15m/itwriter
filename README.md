@@ -1,5 +1,7 @@
 Create Impulse Tracker .it files from a JSON song datastructure.
 
+See the [browser demo here](https://chr15m.github.io/itwriter) and the node demo in the install section below.
+
 ## Install
 
 ```

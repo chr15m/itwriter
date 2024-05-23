@@ -141,7 +141,7 @@ function itwriter(struct) {
   }
 
   // Orders - order in which the patterns are played
-  for (let o=0; o<struct.order.length; o++) {
+  for (let o = 0; o < struct.order.length; o++) {
     data.setUint8(offset, struct.order[o]);     // pattern 0
     offset += 1;
   }

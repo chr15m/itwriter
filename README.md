@@ -6,7 +6,14 @@ See the [browser demo here](https://chr15m.github.io/itwriter) and the node demo
 
 ```
 npm i itwriter
-npm run example
+```
+
+Run the node example:
+
+```
+cp node_modules/itwriter/example.js .
+node example.js
+xmp example.it
 ```
 
 ## Use

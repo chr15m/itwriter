@@ -2,44 +2,46 @@ const fs = require("fs");
 
 const itwriter = require("./index.js");
 
+/* Make some samples. */
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 const square = [...(new Array(4410))].map((v, i) => Math.sin(i/10) > 0 ? 1 : -1);
 const noisefn = () => [...(new Array(441))].map((v, i) => Math.random() * 2 - 1);
 
+/* Create an impulse tracker file from JSON structure. */
 const it = itwriter({
-  "title": "itwriter example",
-  "bpm": 125,
-  "ticks": 4,
-  "message": "hello!\n\nthis is my song message.",
+  "title": "itwriter example", // track title
+  "bpm": 125, // how fast to play in bpm
+  "ticks": 4, // how many ticks to fit in each row
+  "message": "hello!\n\nthis is my song message.", // optional embedded message
   "samples": [
-    {
+    { // samples can be stereo or mono floating point format
       "filename": "sine.wav",
       "name": "sinewave",
       "samplerate": 44100,
-      "channels": [sine, sine]
+      "channels": [sine, sine] // stereo
     },
     {
       "filename": "sqr.wav",
       "name": "brutal square",
       "samplerate": 44100,
-      "channels": [square]
+      "channels": [square] // mono
     },
     {
       "filename": "noise.wav",
       "name": "noise clip",
-      "samplerate": 22050,
+      "samplerate": 22050, // differnt sample rate
       "channels": [noisefn(), noisefn()]
     }
   ],
-  "channelnames": {
+  "channelnames": { // zero-indexed channel names (optional)
     1: "thingo"
   },
-  "order": [0, 1, 0],
+  "order": [0, 1, 0], // what order to play the patterns
   "patterns": [
     {
       "rows": 16, // pattern length in rows
       "channels": [
-        {
+        { // zero-indexed list of events in each vertical channel
           0: { "note": "E-6", "instrument": 0, "vol": "v64" },
           4: { "note": "C-6", "instrument": 0, "vol": "v64" }
         },
@@ -50,7 +52,7 @@ const it = itwriter({
       ]
     },
     {
-      "name": "a patn name",
+      "name": "a patn name", // optional pattern name
       "rows": 8,
       "channels": [
         {
@@ -64,4 +66,7 @@ const it = itwriter({
   ]
 });
 console.log(it);
+// in Node we can write to disk
 fs.writeFileSync("example.it", Buffer.from(it));
+// in the browser we can download a blog
+// document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}));

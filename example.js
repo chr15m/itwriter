@@ -31,7 +31,7 @@ const it = itwriter({
     }
   ],
   "channelnames": {
-    1: "snares"
+    1: "thingo"
   },
   "order": [0, 1, 0],
   "patterns": [

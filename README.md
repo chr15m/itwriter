@@ -51,3 +51,10 @@ See [./example.js](example.js) for a detailed example of the JSON song structure
 ## Notes
 
 - Currently only patterns and 16-bit mono/stereo samples are supported, not instruments.
+
+## Technical references used
+
+- <https://github.com/OpenMPT/openmpt/blob/master/soundlib/Load_it.cpp>
+- <https://github.com/apollolux/lux-impulse-phoenix/blob/master/ITTECH.TXT>
+- <https://fileformats.fandom.com/wiki/Impulse_tracker>
+- <https://github.com/bunnytrack/umx-converter>

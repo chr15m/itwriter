@@ -21,8 +21,6 @@
 
  */
 
-// thanks to https://github.com/bunnytrack/umx-converter for initial reference implementation
-
 function itwriter(struct) {
   const OrdNum = struct.order.length + 1;
   const InsNum = 0;

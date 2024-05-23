@@ -1,5 +1,10 @@
 {
   "name": "itwriter",
+  "version": "0.0.1",
+  "description": "Write Impulse Tracker module files with JavaScript.",
+  "keywords": ["audio", "music", "music-library", "audio-library", "algorave", "impulsetracker", "impulse-tracker", "tracker-music", "mod-tracker"],
+  "author": "Chris McCormick <chris@mccormick.cx>",
+  "license": "MIT",
   "devDependencies": {
     "jshint":"^2.13.6"
   },

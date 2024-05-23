@@ -9,7 +9,7 @@
     "jshint":"^2.13.6"
   },
   "scripts": {
-    "example": "node example.js && xmp example.it",
-    "test": "node example.js && xmp -d wav example.it -o example.wav 2>&1 | tee /dev/stderr | grep -qc 'Duration'"
+    "example": "node example.js && xmp -C example.it",
+    "test": "node example.js && xmp -C -d wav example.it -o example.wav 2>&1 | tee /dev/stderr | grep -qc 'Duration'"
   }
 }

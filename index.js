@@ -5,9 +5,10 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - support embedded message
+// - support impulse tracker instruments
 //
 // DONE:
+// - support embedded message
 // - implement pattern names
 // - implement channel names
 // - encode stereo samples
@@ -36,10 +37,12 @@ function itwriter(struct) {
   const channelnamecount = struct.channelnames ? Math.max.apply(null, Object.keys(struct.channelnames)) : -1;
   const channelnames = [...(new Array(channelnamecount + 1))].map((x, i)=>struct.channelnames[i] || "");
   const CNAMSize = channelnames.length ? ("CNAM".length + 4 + channelnames.length * 20) : 0;
+  // optional message embedding
+  const MSGSize = struct.message ? (struct.message.length) + 1 : 0;
   // Calculate output file size
   // Calculate the headerSize of the impulse tracker file
   // Initial part of header is always 0xC0 / 192 bytes
-  const headerSize = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4) + PNAMSize + CNAMSize;
+  const headerSize = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4) + PNAMSize + CNAMSize + MSGSize;
   const sampleHeaderSize  = 0x50 * SmpNum;
   const patternsSize = patternBuffers.reduce((size, buffer) => size + buffer.byteLength, 0);
 
@@ -99,8 +102,8 @@ function itwriter(struct) {
   data.setUint16(offset, 0x4900);
   offset += 2;
 
-  // Special
-  data.setUint16(offset, 0x0600);
+  // Special / message flag
+  data.setUint16(offset, 0x0600 | struct.message ? 0x0100 : 0x0000);
   offset += 2;
 
   // GV - global volume
@@ -128,7 +131,16 @@ function itwriter(struct) {
   offset++;
 
   // MsgLgth / message offset / reserved
-  offset += 10;
+  data.setUint16(offset, MSGSize, true);
+  offset += 2;
+  
+  // MsgOffset
+  data.setUint32(offset, struct.message ? headerSize - MSGSize: 0, true);
+  offset += 4;
+
+  // Reserved (OpenMPT writes "OMPT" here for interpreted modplug file)
+  // writeString(data, offset, "OMPT");
+  offset += 4;
 
   // Channel initial pan
   // 0  = hard left
@@ -196,6 +208,12 @@ function itwriter(struct) {
       writeString(data, offset, channelnames[i].slice(0, 20));
       offset += 20;
     }
+  }
+  
+  // Write message data
+  if (struct.message) {
+    writeString(data, offset, struct.message);
+    offset += MSGSize;
   }
 
   // Sample headers

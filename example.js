@@ -10,6 +10,7 @@ const it = itwriter({
   "title": "itwriter example",
   "bpm": 125,
   "ticks": 4,
+  "message": "hello!\n\nthis is my song message.",
   "samples": [
     {
       "filename": "sine.wav",

@@ -36,7 +36,7 @@ const it = itwriter({
   "order": [0, 1, 0],
   "patterns": [
     {
-      "length": 16,
+      "rows": 16, // pattern length in rows
       "channels": [
         {
           0: { "note": "E-6", "instrument": 0, "vol": "v64" },
@@ -50,7 +50,7 @@ const it = itwriter({
     },
     {
       "name": "a patn name",
-      "length": 8,
+      "rows": 8,
       "channels": [
         {
           0: {"note": "C-5", "instrument": 0, "vol": "v64"},

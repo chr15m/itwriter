@@ -308,7 +308,7 @@ function serializeSampleHeader(sample, previousOffset) {
 }
 
 function serializePattern(pattern) {
-  const rows = pattern.length;
+  const rows = pattern.rows;
   const channels = pattern.channels.length;
 
   const result = [];

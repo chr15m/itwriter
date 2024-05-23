@@ -5,10 +5,10 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
-// - implement pattern names
 // - support embedded message
 //
 // DONE:
+// - implement pattern names
 // - implement channel names
 // - encode stereo samples
 // - support multiple samples
@@ -30,13 +30,16 @@ function itwriter(struct) {
   const patternBuffers = struct.patterns.map((pattern) => serializePattern(pattern));
   const PatNum = struct.patterns.length;
 
+  // calculate pattern and channel names and sizes
+  const patternnames = struct.patterns.map((pattern) => pattern.name || "");
+  const PNAMSize = patternnames.length ? ("PNAM".length + 4 + patternnames.length * 32) : 0;
   const channelnamecount = struct.channelnames ? Math.max.apply(null, Object.keys(struct.channelnames)) : -1;
   const channelnames = [...(new Array(channelnamecount + 1))].map((x, i)=>struct.channelnames[i] || "");
   const CNAMSize = channelnames.length ? ("CNAM".length + 4 + channelnames.length * 20) : 0;
   // Calculate output file size
   // Calculate the headerSize of the impulse tracker file
   // Initial part of header is always 0xC0 / 192 bytes
-  const headerSize = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4) + CNAMSize;
+  const headerSize = 0xC0 + OrdNum + (InsNum * 4) + (SmpNum * 4) + (PatNum * 4) + PNAMSize + CNAMSize;
   const sampleHeaderSize  = 0x50 * SmpNum;
   const patternsSize = patternBuffers.reduce((size, buffer) => size + buffer.byteLength, 0);
 
@@ -169,6 +172,18 @@ function itwriter(struct) {
     }
     data.setUint32(offset, headerSize + (SmpNum * 0x50) + patternOffset, true);
     offset += 4;
+  }
+
+  // PNAM section
+  if (patternnames.length) {
+    writeString(data, offset, "PNAM");
+    offset += 4;
+    data.setUint32(offset, patternnames.length * 32, true);
+    offset += 4;
+    for (let i = 0; i < patternnames.length; i++) {
+      writeString(data, offset, patternnames[i].slice(0, 32));
+      offset += 32;
+    }
   }
 
   // CNAM section

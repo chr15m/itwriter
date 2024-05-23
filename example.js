@@ -49,6 +49,7 @@ const it = itwriter({
       ]
     },
     {
+      "name": "a patn name",
       "length": 8,
       "channels": [
         {

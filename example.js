@@ -1,6 +1,5 @@
-const fs = require("fs");
-
-const itwriter = require("./index.js");
+import fs from "fs";
+import itwriter from "./index.js";
 
 /* Make some samples. */
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
@@ -68,5 +67,5 @@ const it = itwriter({
 console.log(it);
 // in Node we can write to disk
 fs.writeFileSync("example.it", Buffer.from(it));
-// in the browser we can download a blog
-// document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}));
+// in the browser we can download a blob
+// document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}))

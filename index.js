@@ -160,7 +160,7 @@ function itwriter(struct) {
 
   // Orders - order in which the patterns are played
   for (let o = 0; o < struct.order.length; o++) {
-    data.setUint8(offset, struct.order[o]);     // pattern 0
+    data.setUint8(offset, struct.order[o]);
     offset += 1;
   }
   data.setUint8(offset, 0xFF); // "---", end of song marker
@@ -440,4 +440,11 @@ function writeString(view, offset, string) {
   }
 }
 
-module.exports = itwriter;
+// exports etc.
+
+// If we're in the browser attach to the window as a top level var
+if (typeof window !== 'undefined') {
+  window.itwriter = itwriter;
+}
+
+export default itwriter;

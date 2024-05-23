@@ -1,11 +1,51 @@
 Create Impulse Tracker .it files from a JSON song datastructure.
 
-`npm run example`
+## Install
 
-Usage: `const buffer = itwriter(song_structure)`
+```
+npm i itwriter
+npm run example
+```
 
-See [./example.js](example.js) for details of the expected JSON song structure.
+## Use
 
-# Notes
+Basic usage: `const bytebuffer = itwriter(song_structure)`
+
+More detailed usage:
+
+```javascript
+import itwriter from "./index.js";
+
+// create a 10ms sinewave sample
+const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
+
+const buffer = itwriter({
+  "title": "example",
+  "bpm": 120,
+  "samples": [{"name": "sine wave", "samplerate": 44100, "channels": [sine]}],
+  "patterns": [{
+    "rows": 32,
+    "channels": [{
+      0: {
+        "note": "C-5",
+        "instrument": 0,
+        "vol": "v64",
+      }
+    }]
+  }],
+  "order": [0],
+});
+
+// in Node we can write to disk
+import fs from "fs";
+fs.writeFileSync("example.it", Buffer.from(it));
+
+// in the browser we can download a blob
+document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}))
+```
+
+See [./example.js](example.js) for a detailed example of the JSON song structure.
+
+## Notes
 
 - Currently only patterns and 16-bit mono/stereo samples are supported, not instruments.

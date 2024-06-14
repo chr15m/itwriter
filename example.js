@@ -62,7 +62,9 @@ const it = itwriter({
         }
       ]
     },
-  ]
+  ],
+  // tracker ID: https://wiki.openmpt.org/Development:_Formats/IT#Tracker_IDs
+  "tracker_id": 0xD1CE,
 });
 console.log(it);
 // in Node we can write to disk

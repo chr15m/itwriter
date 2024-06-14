@@ -89,15 +89,17 @@ function itwriter(struct) {
   offset += 2;
 
   // Cwt/v - created with tracker
-  data.setUint16(offset, 0x2951);
+  // https://wiki.openmpt.org/Development:_Formats/IT#Tracker_IDs
+  // 0x1402 is Impulse Tracker
+  data.setUint16(offset, struct.tracker_id || 0xD1CE, true);
   offset += 2;
 
   // Cmwt - compatible with tracker with version greater than value
-  data.setUint16(offset, 0x1402);
+  data.setUint16(offset, 0x1402, true);
   offset += 2;
 
   // Flags (set to default from OpenMPT)
-  data.setUint16(offset, 0x4900);
+  data.setUint16(offset, 0x4900, true);
   offset += 2;
 
   // Special / message flag

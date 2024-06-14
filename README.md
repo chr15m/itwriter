@@ -28,7 +28,7 @@ import itwriter from "itwriter";
 // create a 10ms sinewave sample
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 
-const buffer = itwriter({
+const it = itwriter({
   "title": "example",
   "bpm": 120,
   "samples": [{"name": "sine wave", "samplerate": 44100, "channels": [sine]}],
@@ -50,7 +50,7 @@ import fs from "fs";
 fs.writeFileSync("example.it", Buffer.from(it));
 
 // in the browser we can download a blob
-document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}))
+document.location.href = URL.createObjectURL(new File([it], "example.it"));
 ```
 
 See [./example.js](example.js) for a detailed example of the JSON song structure.

@@ -68,4 +68,4 @@ console.log(it);
 // in Node we can write to disk
 fs.writeFileSync("example.it", Buffer.from(it));
 // in the browser we can download a blob
-// document.location.href = URL.createObjectURL(new File([it], {"name": "example.it"}))
+// document.location.href = URL.createObjectURL(new File([it], "example.it"))

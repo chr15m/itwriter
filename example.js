@@ -1,10 +1,14 @@
 import fs from "fs";
 import itwriter from "./index.js";
+import AudioBuffer from "audio-buffer";
 
 /* Make some samples. */
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 const square = [...(new Array(4410))].map((v, i) => Math.sin(i/10) > 0 ? 1 : -1);
-const noisefn = () => [...(new Array(441))].map((v, i) => Math.random() * 2 - 1);
+const noisefn = () => [...(new Array(480))].map((v, i) => Math.random() * 2 - 1);
+const noisebuffer = new AudioBuffer({"length": 480, "sampleRate": 48000, "numberOfChannels": 2});
+noisebuffer.copyToChannel(noisefn(), 0);
+noisebuffer.copyToChannel(noisefn(), 1);
 
 /* Create an impulse tracker file from JSON structure. */
 const it = itwriter({
@@ -22,14 +26,13 @@ const it = itwriter({
     {
       "filename": "sqr.wav",
       "name": "brutal square",
-      "samplerate": 44100,
+      "samplerate": 22050, // different sample rate
       "channels": [square] // mono
     },
     {
       "filename": "noise.wav",
       "name": "noise clip",
-      "samplerate": 22050, // differnt sample rate
-      "channels": [noisefn(), noisefn()]
+      "buffer": noisebuffer, // samples can also be an AudioBuffer
     }
   ],
   "channelnames": { // zero-indexed channel names (optional)

@@ -44,6 +44,14 @@ function itwriter(struct) {
   const sampleHeaderSize  = 0x50 * SmpNum;
   const patternsSize = patternBuffers.reduce((size, buffer) => size + buffer.byteLength, 0);
 
+  // Convert AudioBuffers to the channels layout
+  struct.samples.forEach((sample) => {
+    if (sample.buffer) {
+      sample.samplerate = sample.buffer.sampleRate;
+      sample.channels = [...(new Array(sample.buffer.numberOfChannels))].map((_, c)=>sample.buffer.getChannelData(c));
+    }
+  });
+
   const [ _lastSampleOffset, sampleHeaderBuffers ] = struct.samples.reduce((collection, sample) => {
     const [ sampleOffset, buffers ] = collection;
     const buffer = serializeSampleHeader(sample, sampleOffset);
@@ -243,8 +251,8 @@ function itwriter(struct) {
 function serializeSampleHeader(sample, previousOffset) {
   const buffer = new ArrayBuffer(0x50);
   const data = new DataView(buffer);
-  let offset = 0;
   const bitDepth = 16;
+  let offset = 0;
 
   writeString(data, offset, "IMPS");
   offset += 4;

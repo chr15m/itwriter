@@ -17,6 +17,7 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "audio-buffer": "^5.0.0",
     "jshint": "^2.13.6"
   },
   "scripts": {

@@ -1,6 +1,6 @@
 {
   "name": "itwriter",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Write Impulse Tracker module files with JavaScript.",
   "keywords": [
     "audio",

@@ -31,7 +31,11 @@ const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));
 const it = itwriter({
   "title": "example",
   "bpm": 120,
-  "samples": [{"name": "sine wave", "samplerate": 44100, "channels": [sine]}],
+  "samples": [{
+    "name": "sine wave",
+    "samplerate": 44100,
+    "channels": [sine]
+  }],
   "patterns": [{
     "rows": 32,
     "channels": [{

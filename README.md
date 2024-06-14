@@ -23,7 +23,7 @@ Basic usage: `const bytebuffer = itwriter(song_structure)`
 More detailed usage:
 
 ```javascript
-import itwriter from "./index.js";
+import itwriter from "itwriter";
 
 // create a 10ms sinewave sample
 const sine = [...(new Array(4410))].map((v, i) => Math.sin(i/10));

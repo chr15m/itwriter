@@ -103,11 +103,11 @@ function itwriter(struct) {
   offset += 2;
 
   // Cmwt - compatible with tracker with version greater than value
-  data.setUint16(offset, 0x1402, true);
+  data.setUint16(offset, 0x0214, true);
   offset += 2;
 
   // Flags (set to default from OpenMPT)
-  data.setUint16(offset, 0x4900, true);
+  data.setUint16(offset, 0x0049, true);
   offset += 2;
 
   // Special / message flag

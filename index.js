@@ -77,8 +77,10 @@ function itwriter(struct) {
   offset += 26;
 
   // PHiligt - pattern row hilight information
-  data.setUint16(offset, 0x0410);
-  offset += 2;
+  data.setUint8(offset, 0x04);
+  offset += 1;
+  data.setUint8(offset, 0x10);
+  offset += 1;
 
   // OrdNum - number of orders in song
   data.setUint16(offset, OrdNum, true);
@@ -111,7 +113,7 @@ function itwriter(struct) {
   offset += 2;
 
   // Special / message flag
-  data.setUint16(offset, 0x0600 | struct.message ? 0x0100 : 0x0000);
+  data.setUint16(offset, 0x0006 | struct.message ? 0x0001 : 0x0000, true);
   offset += 2;
 
   // GV - global volume

@@ -5,6 +5,8 @@
  * @note See exampe.js for details of the JSON datastructure specification.
 
 // TODO:
+// - sample global volume
+// - channel pan & volume settings
 // - support impulse tracker instruments
 //
 // DONE:
@@ -121,7 +123,7 @@ function itwriter(struct) {
   offset++;
 
   // MV - mix volume
-  data.setUint8(offset, 0x30);
+  data.setUint8(offset, (struct.mixvol || 48));
   offset++;
 
   // IS - initial speed of song - ticks per row

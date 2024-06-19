@@ -15,6 +15,7 @@ const it = itwriter({
   "title": "itwriter example", // track title
   "bpm": 125, // how fast to play in bpm
   "ticks": 4, // how many ticks to fit in each row
+  "mixvol": 48, // mix volume - max 128
   "message": "hello!\n\nthis is my song message.", // optional embedded message
   "samples": [
     { // samples can be stereo or mono floating point format

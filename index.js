@@ -115,7 +115,7 @@ function itwriter(struct) {
   offset += 2;
 
   // Special / message flag
-  data.setUint16(offset, 0x0006 | struct.message ? 0x0001 : 0x0000, true);
+  data.setUint16(offset, 0x0006 | (struct.message ? 0x0001 : 0x0000), true);
   offset += 2;
 
   // GV - global volume

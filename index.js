@@ -24,15 +24,17 @@
  */
 
 function itwriter(struct) {
-  const OrdNum = struct.order.length + 1;
+  const order = (struct.order || []);
+  const patterns = (struct.patterns || []);
+  const OrdNum = order.length + 1;
   const InsNum = 0;
   const SmpNum = struct.samples.length;
 
-  const patternBuffers = struct.patterns.map((pattern) => serializePattern(pattern));
-  const PatNum = struct.patterns.length;
+  const patternBuffers = patterns.map((pattern) => serializePattern(pattern));
+  const PatNum = patterns.length;
 
   // calculate pattern and channel names and sizes
-  const patternnames = struct.patterns.map((pattern) => pattern.name || "");
+  const patternnames = patterns.map((pattern) => pattern.name || "");
   const PNAMSize = patternnames.length ? ("PNAM".length + 4 + patternnames.length * 32) : 0;
   const channelnamecount = struct.channelnames ? Math.max.apply(null, Object.keys(struct.channelnames)) : -1;
   const channelnames = [...(new Array(channelnamecount + 1))].map((x, i)=>struct.channelnames[i] || "");
@@ -171,8 +173,8 @@ function itwriter(struct) {
   }
 
   // Orders - order in which the patterns are played
-  for (let o = 0; o < struct.order.length; o++) {
-    data.setUint8(offset, struct.order[o]);
+  for (let o = 0; o < order.length; o++) {
+    data.setUint8(offset, order[o]);
     offset += 1;
   }
   data.setUint8(offset, 0xFF); // "---", end of song marker

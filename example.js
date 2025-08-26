@@ -46,7 +46,9 @@ const it = itwriter({
       "channels": [
         { // zero-indexed list of events in each vertical channel
           0: { "note": "E-6", "instrument": 0, "vol": "v64" },
-          4: { "note": "C-6", "instrument": 0, "vol": "v64" }
+          1: { "note": "==" },
+          4: { "note": "C-6", "instrument": 0, "vol": "v64" },
+          5: { "note": "^^" }
         },
         {
           2: { "note": "E-6", "vol": "v64", "fx": "SD1" },

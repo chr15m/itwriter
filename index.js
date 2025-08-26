@@ -407,6 +407,8 @@ function serializePattern(pattern) {
 /*** utility functions ***/
 
 function noteToValue(note) {
+  if (note === '==') return 255;
+  if (note === '^^') return 254;
   const notes = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-'];
   const octave = parseInt(note[2]);
   const noteIdx = notes.indexOf(note.slice(0, 2));
